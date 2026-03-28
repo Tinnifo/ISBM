@@ -45,7 +45,8 @@ class CGS_IRM:
         Nm = np.zeros((K, K), dtype=float)
 
         for i in range(N1):
-            m1[i] += 1
+            m1[z1[i]] += 1
+            
         for j in range(N2):
             m2[j] += 1
 
