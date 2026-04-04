@@ -46,7 +46,7 @@ class CGS_IRM:
 
         for i in range(N1):
             m1[z1[i]] += 1
-            
+
         for j in range(N2):
             m2[j] += 1
 
@@ -109,9 +109,9 @@ class CGS_IRM:
 
                 # Final Normalization (Log-Sum-Exp Trick)
                 log_p = np.array(log_p)
-                log_p -= log_p.max() # Subtract maximum to prevent np.exp() overflow
+                log_p -= log_p.max()  # Subtract maximum to prevent np.exp() overflow
                 p = np.exp(log_p)
-                p /= p.sum() # Normalize
+                p /= p.sum()  # Normalize
                 chosen = ids[rng.choice(len(ids), p=p)]
 
                 if chosen == -1:

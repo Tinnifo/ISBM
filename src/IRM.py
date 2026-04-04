@@ -1,7 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
-N = 50  # Example number of nodes
-alpha = 1.0  # Concentration parameter
+N = 150  # Example number of nodes
+alpha = 5.0  # Concentration parameter
 
 # Track the number of nodes in each cluster
 cluster_counts = []
@@ -40,13 +41,14 @@ print(f"Node assignments (Z): {Z}")
 
 
 # We set the hyperparameters a and b
-a = 1
-b = 1
+a_block = 10
+b_block = 1
+a_non_block = 1
+b_non_block = 15
 
 # We define the matrix of theta values, sampled from the beta distribution
-theta_matrix = np.random.beta(a, b, size=(K, K))
-
-print(theta_matrix)
+theta_matrix_block = np.random.beta(a_block, b_block, size=(K, K))
+theta_matrix_non_block = np.random.beta(a_non_block, b_non_block, size=(K, K))
 
 
 # Initialize an empty N x N matrix
@@ -55,9 +57,16 @@ X = np.zeros((N, N))
 for i in range(N):
     for j in range(N):
         # 1. Look up the probability for this specific pair of nodes
-        p_link = theta_matrix[Z[i], Z[j]]
+        if Z[i] == Z[j]:
+            p_link = theta_matrix_block[Z[i], Z[j]]
+        else:
+            p_link = theta_matrix_non_block[Z[i], Z[j]]
 
         # 2. Flip the coin! n=1 makes it a simple True/False (1 or 0) outcome
         X[i, j] = np.random.binomial(n=1, p=p_link)
 
 print(X)
+
+# Sort by cluster labels
+labels = np.asarray(Z)
+idx = np.argsort(labels)

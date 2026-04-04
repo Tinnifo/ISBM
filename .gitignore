@@ -11,6 +11,7 @@ env/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+personal_notebooks/
 
 # IDE - PyCharm / IntelliJ IDEA
 .idea/
@@ -21,3 +22,7 @@ env/
 # Windows
 Thumbs.db
 
+
+# Claude tools
+.claude
+CLAUDE.md
