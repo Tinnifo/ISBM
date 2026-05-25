@@ -1,3 +1,7 @@
 numpy
 scipy
 matplotlib
+scikit-learn
+hydra-core
+mlflow
+omegaconf

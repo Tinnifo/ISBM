@@ -1,0 +1,3 @@
+enabled: true
+tracking_uri: file:./mlruns
+experiment_name: isbm-irm

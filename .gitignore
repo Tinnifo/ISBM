@@ -26,3 +26,8 @@ Thumbs.db
 # Claude tools
 .claude
 CLAUDE.md
+
+# Hydra / MLflow experiment outputs
+outputs/
+multirun/
+mlruns/

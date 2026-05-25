@@ -1,0 +1,7 @@
+# @package _global_
+defaults:
+  - /data: synthetic
+  - /model: cgs
+  - /tracking: mlflow
+
+seed: 42
