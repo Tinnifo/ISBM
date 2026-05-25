@@ -1,6 +1,4 @@
-# ISBM-1
 
-Infinite Relational Model (IRM) experiments with Collapsed Gibbs Sampling. Experiments are driven by [Hydra](https://hydra.cc/) and tracked locally with [MLflow](https://mlflow.org/).
 
 ## Structure
 
