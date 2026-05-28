@@ -8,9 +8,9 @@ src/isbm/        Python package
   models/        CGS_IRM sampler
   data/          Synthetic-graph generator
   metrics/       ARI, held-out predictive log-likelihood
-  utils/         Seeding + plotting helpers
+  utils/         Seeding helper
   experiments/   Hydra entry point (run.py)
-Notebooks/       Exploratory notebooks + results_template.ipynb
+Notebooks/       Exploratory notebooks
 outputs/         Hydra per-run dirs (gitignored)
 mlruns/          MLflow local store (gitignored)
 ```
@@ -45,8 +45,4 @@ python -m isbm.experiments.run tracking=none
 mlflow ui
 ```
 
-Each run writes to `outputs/<date>/<time>/` containing `.hydra/config.yaml` (full resolved config), `artifacts.npz` (X, Z_true, z1, z2, ll_trace), and the Hydra log.
-
-## Sharing results
-
-Open `Notebooks/results_template.ipynb` — it auto-loads the latest run from `outputs/`, prints the resolved config, and reproduces the standard plots. Duplicate it and commit a `results_<topic>.ipynb` to share specific findings with teammates.
+Each run writes to `outputs/<date>/<time>/` containing `.hydra/config.yaml` (full resolved config) and the Hydra log.

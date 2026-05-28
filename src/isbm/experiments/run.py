@@ -2,8 +2,6 @@ from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 import hydra
-import numpy as np
-from hydra.core.hydra_config import HydraConfig
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
@@ -48,9 +46,6 @@ def main(cfg: DictConfig) -> float:
     X, Z_true = instantiate(cfg.data)
     model = instantiate(cfg.model)
 
-    run_dir = Path(HydraConfig.get().runtime.output_dir)
-    run_dir.mkdir(parents=True, exist_ok=True)
-
     tracker = _mlflow_run(cfg) if cfg.tracking.enabled else nullcontext()
     with tracker:
         model.fit(X)
@@ -59,23 +54,12 @@ def main(cfg: DictConfig) -> float:
         ari_score = ari(Z_true, model.z1_)
         n_clusters = int(model.z1_.max() + 1)
 
-        artifact_path = run_dir / "artifacts.npz"
-        np.savez(
-            artifact_path,
-            X=X,
-            Z_true=Z_true,
-            z1=model.z1_,
-            z2=model.z2_,
-            ll_trace=np.asarray(model.ll_trace_),
-        )
-
         if cfg.tracking.enabled:
             import mlflow
 
             mlflow.log_metric("final_ll", final_ll)
             mlflow.log_metric("ari", ari_score)
             mlflow.log_metric("n_clusters_inferred", n_clusters)
-            mlflow.log_artifact(str(artifact_path))
 
         print(f"final_ll={final_ll:.3f}  ari={ari_score:.3f}  n_clusters={n_clusters}")
         return final_ll
