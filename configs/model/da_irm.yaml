@@ -1,0 +1,10 @@
+_target_: isbm.models.da_irm.DA_IRM
+alpha1: 1.0
+alpha2: 1.0
+a: 1.0
+b: 1.0
+n_iter: 500
+burnin: 250
+surrogate: plugin      # cheap screen: "plugin" (posterior-mean Bernoulli) or "subsample"
+subsample_frac: 0.5    # fraction of opposite-domain clusters used by the "subsample" surrogate
+seed: 0

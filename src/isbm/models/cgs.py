@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.special import gammaln
 
+from isbm.models.marginal import existing_log_marginal, new_log_marginal
+
 # The Gibbs Sampler implementation is based on Section 3 of Collapsed Variational Bayes Inference of Infinite Relational Model: https://arxiv.org/abs/1409.4757
 
 
@@ -57,8 +59,11 @@ class CGS_IRM:
         self.z1_samples_ = []  # append accepted cluster assignments
         self.z2_samples_ = []  # append accepted cluster assignments
         self.ll_trace_ = []  # pseudo log likelihood
+        self.exact_evals_trace_ = []  # exact marginal evaluations per sweep
+        self.n_exact_evals_ = 0  # cumulative exact marginal evaluations
 
         for it in range(self.n_iter):
+            n_exact = 0
             for i in rng.permutation(N1):
                 k_old = z1[i]
 
@@ -77,35 +82,24 @@ class CGS_IRM:
                 existing1 = np.where(m1 > 0)[0]
                 log_p = []
                 ids = []
+                np_ = n_plus[active2]
+                Np_ = N_plus[active2]
                 for k in existing1:
                     nk = n[k, active2]
                     Nmk = Nm[k, active2]
-                    np_ = n_plus[active2]
-                    Np_ = N_plus[active2]
                     # Translating the Beta functions of Eq 20 into log-Gamma space
-                    lp = np.log(m1[k]) + np.sum(
-                        gammaln(self.a + nk + np_)
-                        + gammaln(self.b + Nmk + Np_)
-                        - gammaln(self.a + self.b + nk + Nmk + np_ + Np_)
-                        - gammaln(self.a + nk)
-                        - gammaln(self.b + Nmk)
-                        + gammaln(self.a + self.b + nk + Nmk)
+                    lp = np.log(m1[k]) + existing_log_marginal(
+                        nk, Nmk, np_, Np_, self.a, self.b
                     )
                     log_p.append(lp)
                     ids.append(k)
 
-                np_ = n_plus[active2]
-                Np_ = N_plus[active2]
-                lp_new = np.log(self.alpha1) + np.sum(
-                    gammaln(self.a + np_)
-                    + gammaln(self.b + Np_)
-                    - gammaln(self.a + self.b + np_ + Np_)
-                    - gammaln(self.a)
-                    - gammaln(self.b)
-                    + gammaln(self.a + self.b)
+                lp_new = np.log(self.alpha1) + new_log_marginal(
+                    np_, Np_, self.a, self.b
                 )
                 log_p.append(lp_new)
                 ids.append(-1)
+                n_exact += len(existing1) + 1
 
                 # Final Normalization (Log-Sum-Exp Trick)
                 log_p = np.array(log_p)
@@ -138,34 +132,23 @@ class CGS_IRM:
                 existing2 = np.where(m2 > 0)[0]
                 log_p = []
                 ids = []
+                np_ = n_plus[active1]
+                Np_ = N_plus[active1]
                 for l2 in existing2:
                     nl = n[active1, l2]
                     Nml = Nm[active1, l2]
-                    np_ = n_plus[active1]
-                    Np_ = N_plus[active1]
-                    lp = np.log(m2[l2]) + np.sum(
-                        gammaln(self.a + nl + np_)
-                        + gammaln(self.b + Nml + Np_)
-                        - gammaln(self.a + self.b + nl + Nml + np_ + Np_)
-                        - gammaln(self.a + nl)
-                        - gammaln(self.b + Nml)
-                        + gammaln(self.a + self.b + nl + Nml)
+                    lp = np.log(m2[l2]) + existing_log_marginal(
+                        nl, Nml, np_, Np_, self.a, self.b
                     )
                     log_p.append(lp)
                     ids.append(l2)
 
-                np_ = n_plus[active1]
-                Np_ = N_plus[active1]
-                lp_new = np.log(self.alpha2) + np.sum(
-                    gammaln(self.a + np_)
-                    + gammaln(self.b + Np_)
-                    - gammaln(self.a + self.b + np_ + Np_)
-                    - gammaln(self.a)
-                    - gammaln(self.b)
-                    + gammaln(self.a + self.b)
+                lp_new = np.log(self.alpha2) + new_log_marginal(
+                    np_, Np_, self.a, self.b
                 )
                 log_p.append(lp_new)
                 ids.append(-1)
+                n_exact += len(existing2) + 1
 
                 log_p = np.array(log_p)
                 log_p -= log_p.max()
@@ -184,6 +167,8 @@ class CGS_IRM:
             # Pseudo log-likelihood
             ll = self._pseudo_ll(n, Nm, m1, m2)
             self.ll_trace_.append(ll)
+            self.exact_evals_trace_.append(n_exact)
+            self.n_exact_evals_ += n_exact
 
             if it >= self.burnin:
                 self.z1_samples_.append(_compact(z1))
