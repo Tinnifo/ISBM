@@ -41,6 +41,9 @@ class DA_IRM:
         burnin=250,
         surrogate="plugin",
         subsample_frac=0.5,
+        learned_regressor="linear",
+        warmup=800,
+        refit_every=800,
         seed=None,
     ):
         self.alpha1 = alpha1
@@ -51,12 +54,22 @@ class DA_IRM:
         self.burnin = burnin
         self.surrogate = surrogate
         self.subsample_frac = subsample_frac
+        self.learned_regressor = learned_regressor
+        self.warmup = warmup
+        self.refit_every = refit_every
         self.seed = seed
 
     def fit(self, X):
         rng = np.random.default_rng(self.seed)
         surrogate = build_surrogate(
-            self.surrogate, self.a, self.b, rng=rng, subsample_frac=self.subsample_frac
+            self.surrogate,
+            self.a,
+            self.b,
+            rng=rng,
+            subsample_frac=self.subsample_frac,
+            learned_regressor=self.learned_regressor,
+            warmup=self.warmup,
+            refit_every=self.refit_every,
         )
 
         X = np.asarray(X, dtype=np.float64)
@@ -181,6 +194,8 @@ class DA_IRM:
                 n_proposed += int(proposed)
                 n_accept += int(accepted)
                 n_exact += ne
+
+            surrogate.maybe_refit()
 
             ll = self._pseudo_ll(n, Nm, m1, m2)
             self.ll_trace_.append(ll)
@@ -309,9 +324,23 @@ def _da_decide(
     exact_old = exact_loglik(j_old)
     n_exact = 2
 
+    # Feed the two exact evaluations back to a learning surrogate (no-op for
+    # analytic surrogates).
+    _observe(surrogate, cand_ids, n_rows, Nm_rows, n_plus, N_plus, j_star, exact_star)
+    _observe(surrogate, cand_ids, n_rows, Nm_rows, n_plus, N_plus, j_old, exact_old)
+
     # log alpha_2 = [L(k*) - L~(k*)] - [L(k_old) - L~(k_old)].
     log_alpha = (exact_star - surr[j_star]) - (exact_old - surr[j_old])
 
     if np.log(rng.random()) < log_alpha:
         return int(cand_ids[j_star]), True, n_exact, True
     return int(cand_ids[j_old]), False, n_exact, True
+
+
+def _observe(surrogate, cand_ids, n_rows, Nm_rows, n_plus, N_plus, idx, exact_value):
+    if cand_ids[idx] == -1:
+        surrogate.observe_new(n_plus, N_plus, exact_value)
+    else:
+        surrogate.observe_existing(
+            n_rows[idx], Nm_rows[idx], n_plus, N_plus, exact_value
+        )

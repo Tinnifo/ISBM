@@ -5,6 +5,9 @@ a: 1.0
 b: 1.0
 n_iter: 500
 burnin: 250
-surrogate: plugin      # cheap screen: "plugin" (posterior-mean Bernoulli) or "subsample"
+surrogate: plugin      # cheap screen: "plugin", "subsample", or "learned"
 subsample_frac: 0.5    # fraction of opposite-domain clusters used by the "subsample" surrogate
+learned_regressor: linear  # for surrogate=learned: "linear" (fast), "rf", or "gp"
+warmup: 800            # exact evals collected before the learned surrogate is first fit
+refit_every: 800       # exact evals between learned-surrogate refits
 seed: 0
