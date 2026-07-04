@@ -24,7 +24,7 @@ import numpy as np
 
 from isbm.data.synthetic import generate_irm_graph
 from isbm.metrics.clustering import ari, effective_sample_size
-from isbm.models import CGS_IRM, DA_IRM
+from isbm.models import CGS_IRM, DA_IRM, SMC_IRM
 
 
 def _heldout_pairs(N1, N2, frac, rng):
@@ -72,6 +72,7 @@ def run_benchmark(
         ("DA plugin", DA_IRM, {"surrogate": "plugin"}),
         ("DA subsample 0.5", DA_IRM, {"surrogate": "subsample", "subsample_frac": 0.5}),
         ("DA subsample 0.25", DA_IRM, {"surrogate": "subsample", "subsample_frac": 0.25}),
+        ("DA learned (linear)", DA_IRM, {"surrogate": "learned", "learned_regressor": "linear"}),
     ]
 
     common = dict(n_iter=n_iter, burnin=burnin)
@@ -144,6 +145,56 @@ def _print_verdict(aggregated, base_ll):
     print()
 
 
+def run_smc_benchmark(
+    N=150, seeds=3, n_particles=200, n_rejuv=1, alpha=5.0, data_seed=0, gibbs_iter=300
+):
+    """Compare collapsed Gibbs against SMC-over-data (exact and surrogate-accelerated)."""
+    smc_configs = [
+        ("Gibbs (CGS)", CGS_IRM, {"n_iter": gibbs_iter, "burnin": gibbs_iter // 2}),
+        ("SMC exact", SMC_IRM, {"n_particles": n_particles, "proposal": "exact", "n_rejuv": n_rejuv}),
+        ("SMC surrogate", SMC_IRM, {"n_particles": n_particles, "proposal": "surrogate", "n_rejuv": n_rejuv}),
+    ]
+
+    rows = {}
+    for label, cls, extra in smc_configs:
+        runs = []
+        for s in range(seeds):
+            X, Z = generate_irm_graph(N=N, alpha=alpha, seed=data_seed + s)
+            model = cls(seed=s, **extra)
+            t0 = time.perf_counter()
+            model.fit(X)
+            wall = time.perf_counter() - t0
+            runs.append(
+                {
+                    "wall_s": wall,
+                    "ari": ari(Z, model.z1_),
+                    "K": int(model.z1_.max() + 1),
+                    "logZ": float(getattr(model, "logZ_", float("nan"))),
+                    "exact_evals": int(getattr(model, "n_exact_evals_", 0)),
+                }
+            )
+        rows[label] = _aggregate(runs)
+
+    print(f"\nSMC-over-data benchmark  (N={N}, seeds={seeds}, particles={n_particles}, rejuv={n_rejuv}, alpha={alpha})")
+    header = f"{'sampler':<16} {'wall_s':>8} {'speedup':>8} {'ari':>7} {'K':>5} {'logZ':>10} {'exact_evals':>12} {'eval_x':>7}"
+    print(header)
+    print("-" * len(header))
+    base_wall = rows["Gibbs (CGS)"]["wall_s"][0]
+    base_evals = rows["Gibbs (CGS)"]["exact_evals"][0]
+    for label, a in rows.items():
+        wall_m = a["wall_s"][0]
+        speedup = base_wall / wall_m if wall_m > 0 else float("nan")
+        logz = a["logZ"][0]
+        logz_str = f"{logz:>10.1f}" if not np.isnan(logz) else f"{'-':>10}"
+        eval_x = base_evals / a["exact_evals"][0] if a["exact_evals"][0] > 0 else float("nan")
+        print(
+            f"{label:<16} {wall_m:>8.3f} {speedup:>8.2f} {a['ari'][0]:>7.3f} "
+            f"{a['K'][0]:>5.1f} {logz_str} {a['exact_evals'][0]:>12.0f} {eval_x:>7.2f}"
+        )
+    print()
+    return rows
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--N", type=int, default=200, help="number of nodes per domain")
@@ -153,6 +204,9 @@ def main():
     p.add_argument("--heldout-frac", type=float, default=0.1, help="fraction of entries scored for predictive LL")
     p.add_argument("--data-seed", type=int, default=0, help="base seed for the synthetic graph")
     p.add_argument("--alpha", type=float, default=5.0, help="CRP concentration of the synthetic graph (higher => more, smaller clusters)")
+    p.add_argument("--smc", action="store_true", help="also run the SMC-over-data comparison")
+    p.add_argument("--n-particles", type=int, default=200, help="SMC particle count")
+    p.add_argument("--n-rejuv", type=int, default=1, help="SMC rejuvenation sweeps per resample")
     args = p.parse_args()
     run_benchmark(
         N=args.N,
@@ -163,6 +217,16 @@ def main():
         data_seed=args.data_seed,
         alpha=args.alpha,
     )
+    if args.smc:
+        run_smc_benchmark(
+            N=args.N,
+            seeds=args.seeds,
+            n_particles=args.n_particles,
+            n_rejuv=args.n_rejuv,
+            alpha=args.alpha,
+            data_seed=args.data_seed,
+            gibbs_iter=args.n_iter,
+        )
 
 
 if __name__ == "__main__":

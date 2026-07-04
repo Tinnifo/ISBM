@@ -1,0 +1,9 @@
+_target_: isbm.models.smc_irm.SMC_IRM
+n_particles: 200
+alpha: 1.0
+a: 1.0
+b: 1.0
+proposal: exact          # "exact" (optimal, O(K) exact predictives/node) or "surrogate" (O(1))
+resample_threshold: 0.5  # resample when ESS < threshold * n_particles
+n_rejuv: 1               # collapsed-Gibbs rejuvenation sweeps after each resample
+seed: 0
