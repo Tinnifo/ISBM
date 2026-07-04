@@ -35,6 +35,26 @@ def existing_log_marginal(nk, Nmk, n_plus, N_plus, a, b):
     )
 
 
+def existing_log_marginal_rows(nk, Nmk, n_plus, N_plus, a, b):
+    """Vectorized :func:`existing_log_marginal` over multiple clusters.
+
+    ``nk`` / ``Nmk`` have shape ``(E, A)`` (E candidate clusters over A active
+    opposite-domain clusters); ``n_plus`` / ``N_plus`` have shape ``(A,)``.
+    Returns an array of shape ``(E,)``.
+    """
+    nk = np.asarray(nk, dtype=np.float64)
+    Nmk = np.asarray(Nmk, dtype=np.float64)
+    return np.sum(
+        gammaln(a + nk + n_plus)
+        + gammaln(b + Nmk + N_plus)
+        - gammaln(a + b + nk + Nmk + n_plus + N_plus)
+        - gammaln(a + nk)
+        - gammaln(b + Nmk)
+        + gammaln(a + b + nk + Nmk),
+        axis=-1,
+    )
+
+
 def new_log_marginal(n_plus, N_plus, a, b):
     """Log marginal likelihood of an object forming a brand-new cluster.
 

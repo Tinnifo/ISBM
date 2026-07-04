@@ -14,7 +14,7 @@ array axis). ``nk`` / ``Nmk`` may be 1D (a single candidate cluster) or 2D
 
 import numpy as np
 
-from isbm.models.marginal import existing_log_marginal
+from isbm.models.marginal import existing_log_marginal_rows, new_log_marginal
 
 
 class Surrogate:
@@ -93,20 +93,12 @@ class SubsampledMarginalSurrogate(Surrogate):
         N_plus = np.asarray(N_plus, dtype=np.float64)
         n_active = n_plus.shape[-1]
         idx, scale = self._subset_idx(n_active)
-        out = np.array(
-            [
-                existing_log_marginal(
-                    nk[r, idx], Nmk[r, idx], n_plus[idx], N_plus[idx], self.a, self.b
-                )
-                for r in range(nk.shape[0])
-            ]
+        out = existing_log_marginal_rows(
+            nk[:, idx], Nmk[:, idx], n_plus[idx], N_plus[idx], self.a, self.b
         )
-        out *= scale
-        return out
+        return out * scale
 
     def new_loglik(self, n_plus, N_plus):
-        from isbm.models.marginal import new_log_marginal
-
         n_plus = np.asarray(n_plus, dtype=np.float64)
         N_plus = np.asarray(N_plus, dtype=np.float64)
         n_active = n_plus.shape[-1]

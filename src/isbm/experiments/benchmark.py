@@ -61,7 +61,9 @@ def _aggregate(runs):
     return {k: (float(np.mean([r[k] for r in runs])), float(np.std([r[k] for r in runs]))) for k in keys}
 
 
-def run_benchmark(N=200, n_iter=300, burnin=None, seeds=3, heldout_frac=0.1, data_seed=0):
+def run_benchmark(
+    N=200, n_iter=300, burnin=None, seeds=3, heldout_frac=0.1, data_seed=0, alpha=5.0
+):
     if burnin is None:
         burnin = n_iter // 2
 
@@ -78,24 +80,24 @@ def run_benchmark(N=200, n_iter=300, burnin=None, seeds=3, heldout_frac=0.1, dat
     for label, cls, extra in configs:
         runs = []
         for s in range(seeds):
-            X, Z = generate_irm_graph(N=N, seed=data_seed + s)
+            X, Z = generate_irm_graph(N=N, alpha=alpha, seed=data_seed + s)
             rng = np.random.default_rng(1000 + s)
             i_test, j_test = _heldout_pairs(N, N, heldout_frac, rng)
             kwargs = dict(common, seed=s, **extra)
             runs.append(_run_one(cls, kwargs, X, Z, i_test, j_test))
         aggregated[label] = _aggregate(runs)
 
-    _print_table(aggregated, N, n_iter, seeds)
+    _print_table(aggregated, N, n_iter, seeds, alpha)
     return aggregated
 
 
-def _print_table(aggregated, N, n_iter, seeds):
+def _print_table(aggregated, N, n_iter, seeds, alpha):
     baseline = aggregated["CGS (baseline)"]
     base_ll = baseline["mean_ll"][0]
     base_wall = baseline["wall_s"][0]
     base_evals = baseline["exact_evals"][0]
 
-    print(f"\nIRM delayed-acceptance benchmark  (N={N}, n_iter={n_iter}, seeds={seeds})")
+    print(f"\nIRM delayed-acceptance benchmark  (N={N}, n_iter={n_iter}, seeds={seeds}, alpha={alpha})")
     print("Means over seeds. speedup/eval_x are relative to the CGS baseline.")
     print("ll_gap = baseline_mean_ll - this_mean_ll  (>0 means worse fit / poorer mixing).\n")
 
@@ -150,6 +152,7 @@ def main():
     p.add_argument("--seeds", type=int, default=3, help="number of repeated seeds")
     p.add_argument("--heldout-frac", type=float, default=0.1, help="fraction of entries scored for predictive LL")
     p.add_argument("--data-seed", type=int, default=0, help="base seed for the synthetic graph")
+    p.add_argument("--alpha", type=float, default=5.0, help="CRP concentration of the synthetic graph (higher => more, smaller clusters)")
     args = p.parse_args()
     run_benchmark(
         N=args.N,
@@ -158,6 +161,7 @@ def main():
         seeds=args.seeds,
         heldout_frac=args.heldout_frac,
         data_seed=args.data_seed,
+        alpha=args.alpha,
     )
 
 
