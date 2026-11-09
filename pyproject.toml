@@ -1,0 +1,26 @@
+[project]
+name = "isbm"
+version = "0.1.0"
+description = "Infinite relational models (IRM) and their inference: generators, Gibbs samplers and study notebooks"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "marimo>=0.24.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "scipy>=1.18.1",
+    "scikit-learn",
+    "scienceplots",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/isbm"]
+
+[dependency-groups]
+dev = [
+    "tornado<6.5.9",
+]

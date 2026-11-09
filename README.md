@@ -1,48 +1,42 @@
+# ISBM: infinite stochastic block models
 
+Study code for the infinite relational model (IRM) and its inference, following
+Ishiguro, Sato & Ueda, *Collapsed Variational Bayes Inference of Infinite
+Relational Model* (arXiv:1409.4757, 2014; published as *Averaged Collapsed
+Variational Bayes Inference*, JMLR 18, 2017).
 
 ## Structure
 
 ```
-configs/         Hydra configs (data / model / experiment / tracking)
-src/isbm/        Python package
-  models/        CGS_IRM sampler
-  data/          Synthetic-graph generator
-  metrics/       ARI, held-out predictive log-likelihood
-  utils/         Seeding helper
-  experiments/   Hydra entry point (run.py)
-Notebooks/       Exploratory notebooks
-outputs/         Hydra per-run dirs (gitignored)
-mlruns/          MLflow local store (gitignored)
+src/isbm/            Python package (plain modules)
+  irm.py             generate_irm_graph: single-domain IRM generator
+  cgs.py             CGS_IRM: collapsed Gibbs sampler, two-domain IRM
+  metrics.py         ari, heldout_test_ll
+Notebooks/           marimo notebooks
+  unipartite.py                 single-domain IRM + plain Gibbs (current study)
+  Ising_model.py                Ising model, Boltzmann distribution, sampling
+  gibbs_sampling.py             Gibbs sampling from scratch (Pólya)
+  ad_posterior_walkthrough.py   4-person exact posterior vs. Gibbs chain
+  learning_bayes.py             outline of inference methods
 ```
 
 ## Setup
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+uv sync          # creates .venv and installs isbm (editable) + dependencies
 ```
 
-## Running experiments
-
-Run from the project root with `src/` on the Python path:
+## Use
 
 ```bash
-export PYTHONPATH=src   # or prefix each command
-
-# Default run (Hydra reads configs/config.yaml)
-python -m isbm.experiments.run
-
-# Override any leaf parameter
-python -m isbm.experiments.run model.n_iter=1000 data.N=300
-
-# Sweep
-python -m isbm.experiments.run -m model.alpha1=0.5,1.0,2.0
-
-# Skip MLflow tracking for a quick run
-python -m isbm.experiments.run tracking=none
-
-# Browse tracked runs
-mlflow ui
+uv run marimo edit Notebooks/unipartite.py
 ```
 
-Each run writes to `outputs/<date>/<time>/` containing `.hydra/config.yaml` (full resolved config) and the Hydra log.
+```python
+from isbm import generate_irm_graph, CGS_IRM
+from isbm.metrics import ari
+
+X, z = generate_irm_graph(N=100, seed=0)
+model = CGS_IRM(n_iter=200, burnin=100, seed=0).fit(X)
+print(ari(z, model.z1_))
+```

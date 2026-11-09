@@ -1,3 +1,61 @@
+r"""Collapsed Gibbs sampling for the two-domain IRM.
+
+Based on Ishiguro, Sato & Ueda, "Collapsed Variational Bayes Inference of
+Infinite Relational Model", https://arxiv.org/abs/1409.4757 (Section 3).
+Notes carried over verbatim from the former notebook Notebooks/CGS.py, whose
+CGS_IRM class gave identical samples to this one (checked 2026-11-05).
+
+1. Environment and Log-Gamma Setup
+    In a collapsed sampler, we analytically integrate out the probability
+    parameters ($\theta$). This integration results in ratios of Beta functions,
+    denoted as $B(x, y)$ in the paper.
+
+    Because multiplying many probabilities together leads to numerical underflow,
+    we perform our math in log-space. The log of a Beta function can be calculated
+    using the log-Gamma function (`gammaln`):
+
+    $$\log B(x,y) = \log\Gamma(x) + \log\Gamma(y) - \log\Gamma(x+y)$$
+
+2. Counting Statistics & Initialization
+    Equation (13) - Link Counts:
+    $$n_{k,l} = \sum_i \sum_j z_{1,i,k} z_{2,j,l} x_{i,j} \ , \quad
+      N_{k,l} = \sum_i \sum_j z_{1,i,k} z_{2,j,l} (1 - x_{i,j}) \tag{13}$$
+    where $n_{k,l}$ and $N_{k,l}$ denote the number of positive and negative
+    relation observations in the $(k,l)$-cluster pairs.
+
+    Equation (14) - Cluster Memberships:
+    $$m_{1,k} = \sum_i z_{1,i,k} \ , \quad m_{2,l} = \sum_j z_{2,j,l} \tag{14}$$
+    which are the number of objects assigned to each cluster in Domain 1 ($m_1$)
+    and Domain 2 ($m_2$).
+
+    The model is initialized with every object in its own singleton cluster, and
+    then the initial state of these 4 tracking matrices is built.
+
+3. The Gibbs Sweep: Domain 1 ($Z_1$)
+    In a single Gibbs step, we remove object $i$ from the network, recalculate the
+    statistics (denoted as $-(1,i)$ in the paper), and assess the probability of
+    placing it in cluster $k$. The probability equation is derived in Equation (20).
+    Because we are taking the $\log()$ of Equation (20) to prevent underflow, the
+    products become sums, and the division of Beta functions $B(x,y) / B(w,z)$
+    becomes subtraction in log-space. Equation 20's likelihood term
+
+    $\prod_l \frac{B(a + n_{k,l}^{-i} + n_{k,l}^{+i}, b + N_{k,l}^{-i} + N_{k,l}^{+i})}
+                  {B(a + n_{k,l}^{-i}, b + N_{k,l}^{-i})}$
+
+    becomes the `gammaln` expression in the `lp` calculation.
+
+4. The Gibbs Sweep: Domain 2 ($Z_2$)
+    The derivation for the second domain is completely symmetric to the first
+    domain. The probability formulation is defined in Equation (24) of the paper.
+    The code mirrors the Domain 1 block, iterating over `N2`, modifying `m2` and
+    assessing `z2`.
+
+5. Helper Functions
+    The helpers manage the pseudo-log-likelihood tracking across iterations, and
+    compact the cluster indices (removing gaps like [0, 2, 4] -> [0, 1, 2]) at the
+    end of the sampling process.
+"""
+
 import numpy as np
 from scipy.special import gammaln
 
@@ -197,6 +255,9 @@ class CGS_IRM:
         self.m2_ = m2
         return self
 
+    # NOTE: possible bug. z1_/z2_ are re-indexed by _compact (0, 1, 2, ...), but n_/Nm_
+    # are still indexed by the pre-compaction cluster ids. predict() can then read an
+    # empty row and fall back to the prior (theta = a / (a + b)).
     def predict(self, X, i_test, j_test):
         """Marginal test log-likelihood using final sample."""
         z1, z2 = self.z1_, self.z2_

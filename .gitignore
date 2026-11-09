@@ -29,9 +29,8 @@ CLAUDE.md
 CLAUDE.local.md
 
 
-# Hydra / MLflow experiment outputs
-outputs/
-multirun/
-mlruns/
 .wiki
 
+
+# marimo
+__marimo__/
