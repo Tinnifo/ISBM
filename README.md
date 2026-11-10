@@ -20,6 +20,14 @@ Notebooks/           marimo notebooks
   learning_bayes.py             outline of inference methods
 ```
 
+## Research workflow
+
+The ISBM research team (bots + Tinni) works by the rules in [`AGENTS.md`](AGENTS.md):
+every experiment hangs off a Linear hypothesis issue, every PR carries a `FEW-` issue ID,
+and every result links a commit and a lab-journal entry. Templates are in `templates/`,
+literature in `lit/` (search with `tools/lit_search.py`), experiment records in
+`experiments/FEW-<id>/`. Experiments run on the shared box, not on Tinni's Mac.
+
 ## Setup
 
 ```bash

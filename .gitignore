@@ -34,3 +34,16 @@ CLAUDE.local.md
 
 # marimo
 __marimo__/
+
+# Secrets: never commit API keys
+.env
+.env.*
+*.key
+api_key
+openalex_api_key*
+secrets/
+.config/
+
+# Experiment scratch (commit results.json/figures explicitly)
+experiments/**/scratch/
+*.html
