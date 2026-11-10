@@ -9,7 +9,7 @@ team **Research Projects (FEW)**.
 
 | Who | Role | Owns |
 |---|---|---|
-| **Roxana** | Research Scientist | Research question, hypotheses, literature reviews (`lit/`), go / kill calls |
+| **Roxana** | Research Scientist | Research question, hypotheses, literature reviews (`lit/`), the weekly venue scan, go / kill calls |
 | **Ezra** | Research Engineer | Library code (`src/isbm/`), marimo notebooks, experiment records, PRs |
 | **Theo** | Theory & Evaluation | Derivations, the evaluation protocol, **required reviewer** of every result PR |
 | **Paul** | PM | Turns every request into a Linear issue, chases stale work, enforces these rules, writes the daily cross-team roll-up, runs the Friday retro |
@@ -91,13 +91,38 @@ own commit or PR comment by the bot that made them.
 - alphaXiv pages and the Hugging Face papers skill may be used for discussion/summaries;
   cite the underlying arXiv ID.
 
+### Weekly venue scan (Roxana)
+
+Once a week Roxana scans new work from leading venues for every **active hypothesis**:
+
+```bash
+python3 tools/lit_search.py venues --days 14      # writes lit/scans/YYYY-MM-DD.md
+```
+
+- Venues: NeurIPS, ICLR, ICML, AISTATS, UAI, JMLR (OpenAlex, by source ID), accepted
+  ICLR / NeurIPS / ICML papers on OpenReview (this year and last), and recent arXiv
+  `stat.ML` / `cs.LG` submissions. Source IDs and caveats are in `tools/lit_search.py`.
+- Topics: `lit/scan_topics.json` maps each active FEW hypothesis issue to its search
+  queries and its domain ("core") and method terms. Roxana keeps it in sync with Linear:
+  add an entry when a hypothesis opens, remove it when it closes.
+- Each digest lists every paper's ID, venue, date and a one-line relevance to a FEW
+  issue. The relevance line starts as an automatic keyword match; Roxana confirms or
+  rewrites it and ticks **Keep?**.
+- Every kept paper becomes a `type/lit-review` issue or a comment on its hypothesis
+  issue (with the ID), goes into `lit/papers.bib`, and gets a vault lab-journal entry.
+  Commit the digest in a PR titled with the lit-review issue ID.
+- `lit/scans/seen.txt` records papers already shown, so each digest lists only new ones.
+- OpenAlex lags on conference proceedings (ICML / ICLR / AISTATS / UAI / JMLR show almost
+  no 2024–26 works), so OpenReview and arXiv carry most of the recent coverage. The arXiv
+  API often returns 429 from the shared box; the tool then falls back to OpenAlex's arXiv index.
+
 ## Layout
 
 ```
 src/isbm/              tested library code
 Notebooks/             marimo notebooks; new ones named FEW-123_slug.py
 experiments/FEW-123/   record.md (locked prediction), results.json, figures
-lit/                   papers.bib + notes/FEW-123-*.md
+lit/                   papers.bib, notes/FEW-123-*.md, scans/YYYY-MM-DD.md, scan_topics.json
 journal/               repo-side index of lab-journal entries (entries live in the vault)
 templates/             hypothesis, experiment record, result, journal entry, notebook header
 tools/lit_search.py    OpenAlex + arXiv search → lit/

@@ -1,0 +1,20 @@
+[
+  {
+    "issue": "FEW-365",
+    "label": "When does CVB match collapsed Gibbs for the IRM? (research brief / candidate hypotheses)",
+    "queries": ["collapsed variational inference stochastic block model", "infinite relational model inference", "stochastic block model variational Bayes", "community detection Bayesian nonparametric"],
+    "core": ["stochastic block model", "block model", "blockmodel", "relational model", "community detection", "co-clustering", "graph clustering", "network clustering", "latent partition"],
+    "method": ["collapsed", "variational", "gibbs", "mcmc", "nonparametric", "dirichlet process", "chinese restaurant", "posterior"],
+    "min_core": 1,
+    "min_method": 1
+  },
+  {
+    "issue": "FEW-366",
+    "label": "Collapsed IRM z-step derivation and samplers",
+    "queries": ["collapsed Gibbs sampler block model", "split merge MCMC clustering", "Dirichlet process mixture Gibbs sampler"],
+    "core": ["block model", "blockmodel", "relational model", "dirichlet process mixture", "mixture model", "clustering"],
+    "method": ["collapsed gibbs", "gibbs sampler", "split-merge", "split merge", "chinese restaurant", "beta-bernoulli", "conjugate"],
+    "min_core": 1,
+    "min_method": 1
+  }
+]

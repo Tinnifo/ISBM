@@ -21,4 +21,12 @@ python3 tools/lit_search.py "stochastic block model variational" --source arxiv 
 python3 tools/lit_search.py "..." --dry-run   # print only
 ```
 
+## Weekly venue scan
+
+```bash
+python3 tools/lit_search.py venues --days 14   # → lit/scans/YYYY-MM-DD.md (+ lit/scans/seen.txt)
+```
+
+Topics per active hypothesis issue are in `scan_topics.json`. See AGENTS.md → *Weekly venue scan*.
+
 PDFs are not committed (copyright/size); link them by DOI/arXiv instead.
